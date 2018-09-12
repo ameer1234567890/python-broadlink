@@ -8,7 +8,7 @@ import warnings
 
 try:
     import pyaes
-    dynamic_requires = ["pyaes==1.6.0"]
+    dynamic_requires = ["pyaes==1.6.1"]
 except ImportError as e:
     dynamic_requires = ['pycryptodome==3.6.6']
 
