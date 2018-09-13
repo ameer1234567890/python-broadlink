@@ -44,6 +44,7 @@ def gendevice(devtype, host, mac):
                0x27a6,  # RM2 Pro PP
                0x278f   # RM Mini Shate
                ],
+          sc1: [0x7547], # SC1
           a1: [0x2714],  # A1
           mp1: [0x4EB5,  # MP1
                 0x4EF7   # Honyar oem mp1
@@ -442,6 +443,62 @@ class sp2(device):
       else:
         energy = int(hex(ord(payload[0x07]) * 256 + ord(payload[0x06]))[2:]) + int(hex(ord(payload[0x05]))[2:])/100.0
       return energy
+
+
+class sc1(device):
+  def __init__ (self, host, mac, devtype):
+    device.__init__(self, host, mac, devtype)
+    self.type = "SC1"
+    
+  def check_nightlight(self):
+    """Returns the power state of the smart plug."""
+    packet = bytearray(16)
+    packet[0] = 1
+    response = self.send_packet(0x6a, packet)
+    err = response[0x22] | (response[0x23] << 8)
+    if err == 0:
+      payload = self.decrypt(bytes(response[0x38:]))
+      if type(payload[0x4]) == int:
+        if payload[0x4] == 2 or payload[0x4] == 3:
+          state = True
+        else:
+          state = False
+      else:
+        if ord(payload[0x4]) == 2 or ord(payload[0x4]) == 3:
+          state = True
+        else:
+          state = False
+      return state
+
+  def set_power(self, state):
+    """Sets the power state of the smart plug."""
+    packet = bytearray(16)
+    packet[0] = 2
+    if self.check_nightlight():
+      packet[4] = 3 if state else 2
+    else:
+      packet[4] = 1 if state else 0
+    self.send_packet(0x6a, packet)
+
+  def check_power(self):
+    """Returns the power state of the smart plug."""
+    packet = bytearray(16)
+    packet[0] = 1
+    response = self.send_packet(0x6a, packet)
+    err = response[0x22] | (response[0x23] << 8)
+    if err == 0:
+      payload = self.decrypt(bytes(response[0x38:]))
+      if type(payload[0x4]) == int:
+        if payload[0x4] == 1 or payload[0x4] == 3:
+          state = True
+        else:
+          state = False
+      else:
+        if ord(payload[0x4]) == 1 or ord(payload[0x4]) == 3:
+          state = True
+        else:
+          state = False
+      return state
 
 
 class a1(device):
